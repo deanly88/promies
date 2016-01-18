@@ -1,0 +1,33 @@
+<% layout('/template/layout.ejs') -%>
+<script src="/processing/processing.js"></script>
+
+<canvas id="canvas1" width="200" height="200"></canvas>
+
+<script id="script1" type="text/javascript">
+
+var sketch = new Processing.Sketch();
+
+sketch.attachFunction = function(processing) {
+
+
+  processing.setup = function() {
+      processing.size(480, 480);
+      processing.smooth();
+  };
+
+  processing.draw = function() {
+      if(processing.mousePressed){
+          processing.fill(0);
+      }else{
+          processing.fill(255);
+      }
+      processing.ellipse(processing.mouseX,processing.mouseY,80,80);
+  }
+
+};
+
+var canvas = document.getElementById("canvas1");
+
+var p = new Processing(canvas, sketch);
+
+</script>

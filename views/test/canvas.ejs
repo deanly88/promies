@@ -1,0 +1,73 @@
+<% layout('/template/layout.ejs') -%>
+
+<div id="color" style="width: 200px; height: 50px;"></div>
+<!--<div id="main" role="main">-->
+  <canvas id="mycanvas">
+    
+  </canvas>
+<!--</div>-->
+<!--<image id="myimage" src="/images/yoo01.jpg"></image>-->
+
+<script id="script1" type="text/javascript">
+$(function(){
+  // Canvas 핸들링
+  var $canvas = $('#mycanvas');
+  var canvas = $canvas.get(0);
+  var ctx = canvas.getContext('2d');
+
+  // 이미지 객체
+  var img = new Image();
+  img.src = '/images/yoo01.jpg';
+  
+  
+  
+  img.onload = function() {
+    console.log(ctx);
+    
+    // ctx.lineTo(0,400);
+    img.style.display = 'none';
+    respondCanvas();
+  };
+  
+  var color = $('#color').get(0);
+  
+  function pick(event) {
+    var x = event.layerX;
+    var y = event.layerY;
+    var pixel = ctx.getImageData(x, y, 1, 1);
+    var data = pixel.data;
+    var rgba = 'rgba(' + data[0] + ',' + data[1] +
+              ',' + data[2] + ',' + data[3] + ')';
+    color.style.background =  rgba;
+    color.textContent = rgba;
+  }
+  canvas.addEventListener('mousemove', pick);
+  
+  // Canvas 리사이징 
+  $(window).resize(respondCanvas);
+  var container = $canvas.parent();
+  
+  function respondCanvas(){
+    // Canvas 크기조정
+    var canvasHeight = $(window).get(0).innerHeight - 50;
+    var canvasWidth = $(container).width();
+    console.log($(container).width()+':'+canvasHeight);
+    $canvas.attr('width', canvasWidth);
+    $canvas.attr('height', canvasHeight);
+
+    var img_y = 0;
+    var img_width = canvasWidth*0.9;
+    var img_x = (canvasWidth - img_width)/2;
+    var img_height = img.height/img.width*img_width;
+    ctx.drawImage(img,0,0,img.width,img.height, img_x, img_y, img_width, img_height);
+  }
+  // Initial Call~~
+  // respondCanvas();
+  
+});
+
+</script>
+
+<!--출처-->
+<!--ameijer.nl/2011/08/resizable-html5-canvas/-->
+<!--https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Pixel_manipulation_with_canvas-->
