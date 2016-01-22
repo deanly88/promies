@@ -1,0 +1,199 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>무제 문서</title>
+	<style>
+    	canvas{ background-color:gray;}
+    </style>
+    <script>
+    	window.onload=function(){
+			
+			button1=document.getElementById("button1");
+			
+			draw=function draw(){
+				canvas1=document.getElementById("canvas1");
+				if(canvas1.getContext("2d")){
+					ctx=canvas1.getContext("2d");
+					ctx.fillStyle=makeColor();
+					ctx.fillRect(10, 10, 50, 50);
+					ctx.fillStyle=makeColor();
+					ctx.fillRect(60, 10, 50, 50);
+					ctx.fillStyle=makeColor();
+					ctx.fillRect(10, 60, 50, 50);
+					ctx.fillStyle=makeColor();
+					ctx.fillRect(60, 60, 50, 50);
+					
+					ctx.beginPath();
+					ctx.arc(60,60, 40,0, Math.PI*2,true);
+					ctx.fillStyle=makeColor();
+					// alpha 셋팅하기
+					ctx.globalAlpha=1.0;
+					ctx.fill();
+					
+					ctx.beginPath();
+					ctx.arc(60,60, 20,0, Math.PI*2,true);
+					ctx.fillStyle=makeColor();
+					// alpha 셋팅하기
+					ctx.globalAlpha=1.0;
+					ctx.fill();
+					
+					/* gradient */
+					//시작x, 시작y, 끝x, 끝y
+					var grad=ctx.createLinearGradient(120,0,300,300);
+					grad.addColorStop(0,makeColor());
+					grad.addColorStop(0.5,makeColor());	
+					grad.addColorStop(0.8,makeColor());
+					grad.addColorStop(1,makeColor());
+					ctx.fillStyle=grad; // 채울때 그라디언트로 채우기
+					ctx.fillRect(120,0,180,180);
+					
+					/* 원형 gradient */
+					
+					//첫번째 원형 x,y,r 두번째원형 x,y,r
+					var radialGrad=ctx.createRadialGradient(250,50,40,200,100,80);
+
+					radialGrad.addColorStop(0,makeColor());
+					radialGrad.addColorStop(1,makeColor());
+					ctx.fillStyle=radialGrad;
+					//원의 중심의 x,y,r,시작각도,끝각도,반시계방향
+					ctx.arc(220,70,100,0,Math.PI*2,true);
+					ctx.fill();
+								
+					/*2번째 캔버스*/
+					canvas2=document.getElementById("canvas2");
+					ctx2=canvas2.getContext("2d");
+					
+					ctx2.strokeStyle=makeColor();
+					ctx2.lineWidth=5; //선 두께, 기본
+					ctx2.beginPath();//선을 이제부터 그리겠다.
+					ctx2.moveTo(10,10);
+					ctx2.lineTo(150,10);
+					ctx2.moveTo(10,140);
+					ctx2.lineTo(150,140);
+					ctx2.stroke();
+					
+					//선 끝 처리방법
+					//butt   : 기본값이다.
+					//round  : 선두께의 반만큼 반원그린다.
+					//square : 선두께의 반만큼 튀어나온다.
+					var lineCap=['butt','round','square'];
+					ctx2.lineWidth=15;
+					for(i=0; i<lineCap.length; i++){
+						ctx2.lineCap=lineCap[i]; //선 끝 처리방법
+						ctx2.beginPath();
+						ctx2.moveTo((1+i)*40, 10);
+						ctx2.lineTo(10+(1+i)*40, 140);
+						ctx2.stroke();
+					}
+					/*line 합쳐질때의 처리 방법*/
+					var lineJoin=['miter','round','bevel'];
+					for(i=0; i<lineJoin.length; i++){
+						ctx2.strokeStyle=makeColor();
+						ctx2.lineJoin=lineJoin[i];
+						ctx2.beginPath();
+						ctx2.moveTo(220,10+(1+i)*40);
+						ctx2.lineTo(250,10+(1+i)*40 -30);
+						ctx2.lineTo(280,10+(1+i)*40);
+						ctx2.stroke();
+					}
+					
+					/*canvas3*/
+					ctx3=document.getElementById("canvas3").getContext("2d")
+					var img= new Image();
+					img.src=
+						"http://a2.twimg.com/profile_images/1823206451/00tm342X_normal";
+					img.width="20px";
+					img.height="20px";
+					
+					//이미지 로딩이 오래걸리므로 다 로딩되면 펑션 실행
+					img.onload=function(){
+						//repeat, repeat-x, repeat-y, no-repeat
+						var pattern=ctx3.createPattern(img,'repeat');
+						ctx3.fillStyle=pattern;
+						ctx3.clearRect(0,0,300,300); //네모 만큼 지워라
+						ctx3.beginPath();//시작
+						ctx3.arc(150,50,Math.random()*100,0,Math.PI*2,true);
+						
+						ctx3.shadowOffsetX=10;//그림자의 x길이
+						ctx3.shadowOffsetY=15; //그림자의 y길이
+						ctx3.shadowBlur=10; //번짐 정도
+						ctx3.shadowColor="black"; //그림자의 색
+						ctx3.fill();
+						ctx3.fillRect(0,0,50,50);
+					}
+					
+					ctx4 =document.getElementById("canvas4").getContext("2d");
+					
+					var img2=new Image();
+					img2.src="http://a2.twimg.com/profile_images/1823206451/00tm342X_normal";
+					img2.onload=function(){
+						ctx4.drawImage(img2,5,5);//x,y
+						ctx4.drawImage(img2,50,5,50.30);//x,y,width,height
+						
+						//이미지,x,y,안쪽 x,안쪽 y,보여줄 가로,세로
+						ctx4.drawImage(img2,10,10,50,50,120,10,200,100);
+					}
+					ctx4.font="30px 궁서";
+					ctx4.fillText("canvas",20,120);
+					ctx4.strokeText("script",150,120);
+					
+					//canvas5 변형/회전
+					ctx5=document.getElementById("canvas5").getContext("2d");
+					for(i=0; i<5; i++){
+						ctx5.save();//처음 위치를 저장
+						ctx5.fillStyle=makeColor();
+						ctx5.translate(i*60,0);//이동시켜라x,y
+						ctx5.fillRect(0,0,50,50);
+						ctx5.restore();//save된 곳으로 복귀(0,0)으로
+					}
+					ctx5.translate(0,80);
+					for(i=0; i<5; i++){
+						ctx5.fillStyle=makeColor();
+						ctx5.translate(60,0);//이동시켜라x,y
+						ctx5.fillRect(0,0,50,50);
+					}
+					
+					//회전 rotate
+					ctx6=document.getElementById("canvas6").getContext("2d");
+					ctx6.translate(100,70);
+					for(i=0; i<10;i++){
+						ctx6.fillStyle=makeColor();
+						ctx6.fillRect(10,10,100,30);
+						ctx6.rotate(Math.PI/180*36);
+					
+					}
+				
+				}else {
+					alert("브라우저가 canvas를 지원하지 않습니다");
+				}	
+			
+			}// draw()
+			
+			// 버튼1에 마우스가 올라가면 draw함수 실행해라
+			button1.onmouseover=draw;
+			button1.onmouseout=draw; //마우스가 빠지면
+			
+		}	// window.onload
+		
+		function makeColor(){
+			r = Math.ceil(Math.random()*255);
+			g = Math.ceil(Math.random()*255);
+			b = Math.ceil(Math.random()*255);
+			color="rgba("+r+","+g+","+b+",0.5)";	//argb, rgba
+			return color;
+			// return "yellow"; return "rgb(200,30,50)";
+		}
+    </script>
+</head>
+	
+<body>
+	<canvas id="canvas6"> </canvas>
+	<canvas id="canvas5"> </canvas>
+	<canvas id="canvas4"> </canvas>
+	<canvas id="canvas3"> </canvas>
+	<canvas id="canvas2"> </canvas>
+	<canvas id="canvas1"> </canvas>
+    <button id="button1">버튼</button>
+</body>
+</html>

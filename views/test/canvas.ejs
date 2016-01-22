@@ -1,68 +1,281 @@
 <% layout('/template/layout.ejs') -%>
 
-<div id="color" style="width: 200px; height: 50px;"></div>
+<!--<div id="color" style="width: 200px; height: 50px;"></div>-->
 <!--<div id="main" role="main">-->
   <canvas id="mycanvas">
     
   </canvas>
 <!--</div>-->
-<!--<image id="myimage" src="/images/yoo01.jpg"></image>-->
 
 <script id="script1" type="text/javascript">
-$(function(){
-  // Canvas 핸들링
-  var $canvas = $('#mycanvas');
-  var canvas = $canvas.get(0);
-  var ctx = canvas.getContext('2d');
 
-  // 이미지 객체
+//TODO(dean): jQuery 쓴거 모두 빼버리기... 독립성을 위해서..
+$(function(){
+  /**
+   *  Canvas 정의 
+   *  더블 버퍼링 사용
+   */
+  // Canvas View
+  var canvasView = {
+    $canvas: $('#mycanvas'),
+    canvas: $('#mycanvas').get(0),
+    ctx: $('#mycanvas').get(0).getContext('2d')
+  }
+  
+  // Canvas Buffer
+  buffer = document.createElement('canvas');
+  var canvasBuffer = {
+    canvas: buffer,
+    ctx: buffer.getContext('2d')
+  }
+  // canvas의 부모
+  var container = {
+    width: $(canvasView['$canvas'].parent()).width(),
+    height: $(canvasView['$canvas'].parent()).height()
+  }
+
+  console.log(canvasView);
+  console.log(canvasBuffer);
+  console.log(container);
+  
+  /** 
+   * 이미지 객체 (테스트용)
+   */ 
   var img = new Image();
-  img.src = '/images/yoo01.jpg';
-  
-  
-  
+  img.src = '/images/test/yoo01.jpg';
+  // 이미지 올리기..
   img.onload = function() {
-    console.log(ctx);
-    
-    // ctx.lineTo(0,400);
     img.style.display = 'none';
     respondCanvas();
   };
   
-  var color = $('#color').get(0);
+  /** 중요
+   *  더블 버퍼링 Buffer -> View, draw 함수
+   */
+  function paint(){
+    canvasView['ctx'].drawImage(canvasBuffer['canvas'], 0, 0);
+  }
+
   
+  /** DEBUG TOOL
+   *  canvas 픽셀 컬러 추출
+   */
+  var color = $('#color').get(0);
   function pick(event) {
     var x = event.layerX;
     var y = event.layerY;
-    var pixel = ctx.getImageData(x, y, 1, 1);
+    var pixel = canvasView['ctx'].getImageData(x, y, 1, 1);
     var data = pixel.data;
     var rgba = 'rgba(' + data[0] + ',' + data[1] +
               ',' + data[2] + ',' + data[3] + ')';
     color.style.background =  rgba;
     color.textContent = rgba;
   }
-  canvas.addEventListener('mousemove', pick);
+  canvasView['canvas'].addEventListener('mousemove', pick);
   
-  // Canvas 리사이징 
+  
+  /** 중요
+   * 메인 이미지의 크기 구하기
+   * @focusedImage 그려질 이미지
+   * @padding_rate_horizontal 좌우 여백 비율
+   * @padding_rate_vertical 상하 여백 비율
+   */
+  function getSizeFocusedImage(focusedImage, padding_rate_horizontal, padding_rate_vertical){
+    var canvasWidth = canvasBuffer['canvas'].width;
+    var canvasHeight = canvasBuffer['canvas'].height;
+    var img_width = canvasWidth*padding_rate_horizontal;
+    var img_height = focusedImage.height/focusedImage.width*img_width;
+    if(img_height > canvasHeight && padding_rate_vertical != null){
+      img_height = canvasHeight*padding_rate_vertical;
+      img_width = focusedImage.width/focusedImage.height*img_height;
+    }
+    var img_x = (canvasWidth - img_width)/2;
+    var img_y = (canvasHeight - img_height)/2;
+    return({x: img_x, y: img_y, w: img_width, h: img_height});
+  }
+  
+  function clearBuffer(){
+    canvasBuffer['ctx'].fillStyle = "white"; //캔버스 배경
+    canvasBuffer['ctx'].fillRect(0, 0, canvasBuffer['canvas'].width, canvasBuffer['canvas'].height);
+  }
+  
+  /** 중요
+   * Init &
+   * Canvas 리사이징 
+   */
   $(window).resize(respondCanvas);
-  var container = $canvas.parent();
-  
   function respondCanvas(){
     // Canvas 크기조정
-    var canvasHeight = $(window).get(0).innerHeight - 50;
-    var canvasWidth = $(container).width();
-    console.log($(container).width()+':'+canvasHeight);
-    $canvas.attr('width', canvasWidth);
-    $canvas.attr('height', canvasHeight);
-
-    var img_y = 0;
-    var img_width = canvasWidth*0.9;
-    var img_x = (canvasWidth - img_width)/2;
-    var img_height = img.height/img.width*img_width;
-    ctx.drawImage(img,0,0,img.width,img.height, img_x, img_y, img_width, img_height);
+    var canvasHeight = $(window).get(0).innerHeight - 70;
+    var canvasWidth = $(window).get(0).innerWidth;
+    console.log('respondCanvas:'+canvasWidth+':'+canvasHeight);        // debuging
+    canvasView['$canvas'].attr('width', canvasWidth);
+    canvasView['$canvas'].attr('height', canvasHeight);
+    // 버퍼 크기 조정
+    canvasBuffer['canvas'].width = canvasView['canvas'].width;
+    canvasBuffer['canvas'].height = canvasView['canvas'].height;
+    
+    console.log('canvasView: '+canvasView['canvas'].width+':'+canvasView['canvas'].height)
+    console.log('canvasBuffer: '+canvasBuffer['canvas'].width+':'+canvasBuffer['canvas'].height)
+    
+    // canvasBuffer['ctx'].drawImage(img,0,0);
+    
+    
+    drawFocusedImage(img, 0.9, 0.9);
+    // drawSkewMainImage();
+    paint();
   }
-  // Initial Call~~
-  // respondCanvas();
+
+  /**
+   * View canvas의 픽셀 색 가져오기 
+   * return value : RGBA 배열순..
+   */
+  function getPixelColor(px, py) {
+    var pixel = ctx.getImageData(px, py, 1, 1);
+    return(pixel.data);
+  }
+  
+  /**
+   * 처음으로 만든 이미지 랜더링 함수 (참고용)
+   */
+  function drawFocusedImage(image, h, v){
+    var i = getSizeFocusedImage(image, h, v);
+    
+    canvasBuffer['ctx'].drawImage(image, 
+                                  0, 0, image.width, image.height, 
+                                  i.x, i.y, i.w, i.h);
+  }
+  
+  /**
+   * DrumView를 위한 Image Redering function
+   */
+  function drawSkewMainImage(){
+    //skew +\frac{y^2}{5}-\frac{x}{22}=1
+    var width = img.width, height = img.height;
+    for (var i = 0; i <= height / 2; ++i) {
+        ctxBuffer.setTransform(1, -0.4 * i / height, 0, 1, 0, 200);
+        ctxBuffer.drawImage(img, 0, height / 2 - i, width, 2, 0, height / 2 - i, width, 2);
+        ctxBuffer.setTransform(1, 0.4 * i / height, 0, 1, 0, 200);
+        ctxBuffer.drawImage(img, 0, height / 2 + i, width, 2, 0, height / 2 + i, width, 2);
+    }
+  }
+  
+  
+  
+  var rotate = 7000;
+  var wheeling = 0;
+  function drawtest01(image, h, v){
+    var rat = 7000/rotate;
+    var i = getSizeFocusedImage(image, h, v);
+    
+    console.log(i.w+':'+i.h);                                 // debuging
+    console.log('rat: '+rat);                                 // debuging
+  
+    clearBuffer();
+    canvasBuffer['ctx'].setTransform(rat,rat-1,0,rat,0,0);
+    canvasBuffer['ctx'].drawImage(image, 
+                                  0, 0, image.width, image.height, 
+                                  i.x, i.y, i.w, i.h);
+    paint();
+  }
+  function drawtest02(image, h, v){
+    var i = getSizeFocusedImage(image, h, v);
+
+    var hr = 30;
+    var rat = wheeling/12000;
+    console.log('rat: '+rat);                                 // debuging
+    
+    var l = canvasBuffer['canvas'].width/2;
+    var T = Math.acos(i.w/(2*l)) + Math.PI;
+    var t = T + rat;
+    var Tst = T-t;
+    console.log('T:'+T); // 0 < t < PI
+    console.log('t:'+t); // 0 < t < PI
+    console.log('T-t:'+(T-t)); // 0 < t < PI
+
+    var skewsH = Tst*Tst*Tst*Tst*30*20;
+    console.log('skewsH:'+skewsH); // 0 < t < PI
+
+    var imgx = Math.cos(t)*l + l;
+    console.log('imgx:'+imgx)
+    var imgy =  i.y - (Math.sin(t)*l+hr)/hr;
+    console.log('imgy:'+imgy)
+    
+    console.log('i.w: '+i.w+', i.h:'+i.h);                    // debuging
+    console.log('i.x: '+i.x+', i.y:'+i.y);                    // debuging
+  
+    clearBuffer();
+    
+    canvasBuffer['ctx'].setTransform(1-Tst,skewsH,0,1-Tst*Tst*Tst*Tst*20,0,0);
+    canvasBuffer['ctx'].drawImage(image, 
+                                  0, 0, image.width, image.height, 
+                                  imgx, imgy, i.w, i.h);
+    paint();
+  }
+  
+  //보류...
+  function drawDrumRotImages(image, h, v){
+    var u = 100;
+    var i = getSizeFocusedImage(image, h, v);
+    
+    var XxT = 100;
+    
+    
+    console.log(i.w+':'+i.h);                                 // debuging
+    // console.log('rat: '+rat);                                 // debuging
+    
+    id = setInterval(function(){
+      console.log(u)
+      
+      var x = i.x + u/XxT;
+      console.log((1+x)/81);
+      var y = i.y + Math.sqrt((1+x)/81);
+      console.log('x: '+x+', y:'+y);                                 // debuging
+      
+      clearBuffer();
+      // canvasBuffer['ctx'].setTransform(rat,rat-1,0,rat,0,0);
+      canvasBuffer['ctx'].drawImage(image, 
+                                    0, 0, image.width, image.height, 
+                                    x, y, i.w, i.h);
+      paint();
+      u -= 5;
+      if(u < -100){
+        clearTimeout(id);
+      }
+    },20)
+  
+  }
+  
+  canvasView['canvas'].addEventListener('wheel', function(event){
+    rotate += event.wheelDelta;
+    wheeling += event.wheelDelta;
+    // console.log(rotate);
+    drawtest02(img, 0.9, 0.9);
+  });
+  
+  canvasView['canvas'].addEventListener('click', function(event){
+    console.log('click');
+    drawDrumRotImages(img, 0.9, 0.9);
+    // slideImage();
+  });
+  
+  function slideImage(){
+    var u = canvasView['canvas'].width;
+    var i = getSizeFocusedImage(img, 0.9, 0.9);
+    id = setInterval(function(){
+      console.log(u)
+      clearBuffer();
+      canvasBuffer['ctx'].drawImage(img, 
+                                    0, 0, img.width, img.height, 
+                                    u, i.y, i.w, i.h);
+      paint();
+      u -= 5;
+      if(u < -canvasView['canvas'].width){
+        clearTimeout(id);
+      }
+    },20)
+    
+  }
   
 });
 
